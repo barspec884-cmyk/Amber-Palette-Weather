@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amber Palette Experimental Weather</title>
+<style>
+body {
+  text-align: center;
+  font-family: "Noto Sans JP", sans-serif;
+  background: radial-gradient(circle at top, #f3ede4, #e6dccb);
+  color: #2c1b0a;
+  padding: 20px;
+}
+button {
+  margin: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #c49a6c;
+  color: white;
+  font-weight: 600;
+}
+button:hover { background: #b18456; }
+#langBtn { background: #6c8bc4; }
+#langBtn:hover { background: #5476b1; }
+#weather {
+  margin-top: 20px;
+  padding: 15px;
+  background: #fffaf3;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+</style>
+</head>
+<body>
+
+<h2>☀️ Amber Palette — Weather & Voice Experiment</h2>
+
+<p id="lang">言語: 日本語 (ja-JP)</p>
+<textarea id="result" rows="4" cols="40" placeholder="🎙️ここに音声入力が表示されます"></textarea><br>
+
+<button id="startBtn">🎤 音声入力スタート</button>
+<button id="stopBtn">⏹️ 停止</button>
+<button id="langBtn">🌐 言語切替</button>
+<button id="gpsBtn">📍 現在地の天気を取得</button>
+
+<div id="weather">天気データはここに表示されます</div>
+
+<script>
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.interimResults = true;
+
+// 言語トグル
+const langList = [
+  { code: "ja-JP", label: "日本語" },
+  { code: "en-US", label: "English" },
+  { code: "fr-FR", label: "Français" },
+  { code: "zh-CN", label: "中文" },
+  { code: "ko-KR", label: "한국어" }
+];
+let langIndex = 0;
+recognition.lang = langList[langIndex].code;
+
+const langDisplay = document.getElementById("lang");
+const result = document.getElementById("result");
+const weatherBox = document.getElementById("weather");
+
+// 🌐 言語トグル
+document.getElementById("langBtn").onclick = () => {
+  langIndex = (langIndex + 1) % langList.length;
+  recognition.lang = langList[langIndex].code;
+  langDisplay.textContent = `言語: ${langList[langIndex].label} (${langList[langIndex].code})`;
+};
+
+// 🎙️ 音声認識
+recognition.onresult = (e) => {
+  const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+  result.value = transcript;
+};
+
+// 🎤マイク許可確認
+async function requestMicPermission() {
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("🎤 マイク許可OK");
+  } catch (err) {
+    alert("マイクの使用を許可してください: " + err.message);
+  }
+}
+
+document.getElementById("startBtn").onclick = async () => {
+  await requestMicPermission();
+  recognition.start();
+};
+document.getElementById("stopBtn").onclick = () => recognition.stop();
+
+// 📍GPS＋住所＋天気（絵文字＋日本語表示対応）
+document.getElementById("gpsBtn").onclick = () => {
+  if (!navigator.geolocation) {
+    alert("位置情報が利用できません");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    // 🏠 住所取得（OpenStreetMap）
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+    const data = await res.json();
+    const addr = data.address;
+    const prefecture = addr.state || "";
+    const city = addr.city || addr.town || addr.village || "";
+    const ward = addr.suburb || addr.county || "";
+
+    // ☀️ 天気取得（Open-Meteo / JMAモデル）
+    const api = `https://api.open-meteo.com/v1/jma?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`;
+    const weatherRes = await fetch(api);
+    const weatherData = await weatherRes.json();
+    const current = weatherData.current;
+
+    // 🌦️ 天気コード → 絵文字＋日本語マップ
+    const weatherMap = {
+      0:  { icon: "☀️", text: "快晴" },
+      1:  { icon: "🌤️", text: "晴れ" },
+      2:  { icon: "⛅", text: "晴れ時々くもり" },
+      3:  { icon: "☁️", text: "くもり" },
+      45: { icon: "🌫️", text: "霧" },
+      48: { icon: "🌫️", text: "濃霧" },
+      51: { icon: "🌦️", text: "小雨" },
+      53: { icon: "🌦️", text: "にわか雨" },
+      61: { icon: "🌧️", text: "雨" },
+      63: { icon: "🌧️", text: "やや強い雨" },
+      65: { icon: "🌧️", text: "強い雨" },
+      71: { icon: "❄️", text: "雪" },
+      73: { icon: "❄️", text: "やや強い雪" },
+      75: { icon: "❄️", text: "強い雪" },
+      80: { icon: "🌧️", text: "にわか雨" },
+      95: { icon: "⛈️", text: "雷雨" },
+      99: { icon: "⛈️", text: "激しい雷雨" }
+    };
+    const code = current.weather_code;
+    const weatherInfo = weatherMap[code] || { icon: "❔", text: "不明" };
+
+    // 🌈 表示
+    document.getElementById("weather").innerHTML = `
+      <h3>📍 現在地：${prefecture} ${city} ${ward}</h3>
+      <p>${weatherInfo.icon} <b>${weatherInfo.text}</b></p>
+      <p>気温：${current.temperature_2m} ℃<br>
+      湿度：${current.relative_humidity_2m} %</p>
+      <small>データ：OpenStreetMap＋Open-Meteo（JMAモデル）</small>
+    `;
+  }, (err) => {
+    alert("GPSエラー: " + err.message);
+  });
+};
+</script>
+
+</body>
+</html>
