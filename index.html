@@ -1,162 +1,493 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amber Palette Experimental Weather</title>
-<style>
-body {
-  text-align: center;
-  font-family: "Noto Sans JP", sans-serif;
-  background: radial-gradient(circle at top, #f3ede4, #e6dccb);
-  color: #2c1b0a;
-  padding: 20px;
-}
-button {
-  margin: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  background: #c49a6c;
-  color: white;
-  font-weight: 600;
-}
-button:hover { background: #b18456; }
-#langBtn { background: #6c8bc4; }
-#langBtn:hover { background: #5476b1; }
-#weather {
-  margin-top: 20px;
-  padding: 15px;
-  background: #fffaf3;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,.1);
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Amber Weather — Black Edition</title>
+  <style>
+    :root {
+      --amber: #d4af37;
+      --bg-grad: radial-gradient(circle at center, #1a0f08 0%, #050302 100%);
+      --glass: rgba(255, 255, 255, 0.04);
+      --muted: #888;
+      --soft: #444;
+      --danger: #d88;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e0e0e0;
+      background: var(--bg-grad);
+      min-height: 100vh;
+      text-align: center;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .nav-header {
+      display: flex;
+      justify-content: flex-start;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      text-decoration: none;
+      color: #888;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 15px;
+      border-radius: 50px;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .back-btn:active {
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--amber);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      color: var(--amber);
+      margin: 10px 0 30px;
+      text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    }
+
+    .weather-card {
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 24px;
+      padding: 2em;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 350px;
+      transition: all 0.4s ease;
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #manual {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 350px;
+    }
+
+    #place {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 50px;
+      padding: 12px 20px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+    }
+
+    #place::placeholder {
+      color: #777;
+    }
+
+    #search {
+      background: var(--amber);
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    #refresh {
+      margin-top: 20px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed rgba(212, 175, 55, 0.4);
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    #search:disabled,
+    #refresh:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .status {
+      font-size: 0.72rem;
+      color: var(--soft);
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .weather-inner {
+      width: 100%;
+    }
+
+    .place-name {
+      font-size: 1.1rem;
+      color: var(--amber);
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+
+    .desc {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .temp {
+      font-size: 1.4rem;
+      color: #fff;
+    }
+
+    .meta {
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 8px;
+      line-height: 1.7;
+    }
+
+    .mini {
+      font-size: 0.65rem;
+      color: #444;
+      margin-top: 14px;
+      line-height: 1.7;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 30px 0;
+      font-size: 0.6rem;
+      color: #444;
+    }
+  </style>
 </head>
 <body>
 
-<h2>☀️ Amber Palette — Weather & Voice Experiment</h2>
+  <header class="nav-header">
+    <a href="https://amber-tools-hub.vercel.app" class="back-btn">🏛 HUB</a>
+  </header>
 
-<p id="lang">言語: 日本語 (ja-JP)</p>
-<textarea id="result" rows="4" cols="40" placeholder="🎙️ここに音声入力が表示されます"></textarea><br>
+  <h1>AMBER WEATHER</h1>
 
-<button id="startBtn">🎤 音声入力スタート</button>
-<button id="stopBtn">⏹️ 停止</button>
-<button id="langBtn">🌐 言語切替</button>
-<button id="gpsBtn">📍 現在地の天気を取得</button>
+  <div id="weather" class="weather-card">
+    <p>📡 測位中…</p>
+  </div>
 
-<div id="weather">天気データはここに表示されます</div>
+  <div id="manual">
+    <input type="text" id="place" placeholder="地名を入力（例：港区）">
+    <button id="search">SEARCH CITY</button>
+  </div>
+
+  <button id="refresh">🔄 GPS REFRESH</button>
+
+  <footer>© AMBER PALETTE — BLACK EDITION</footer>
 
 <script>
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const recognition = new SpeechRecognition();
-recognition.interimResults = true;
-
-// 言語トグル
-const langList = [
-  { code: "ja-JP", label: "日本語" },
-  { code: "en-US", label: "English" },
-  { code: "fr-FR", label: "Français" },
-  { code: "zh-CN", label: "中文" },
-  { code: "ko-KR", label: "한국어" }
-];
-let langIndex = 0;
-recognition.lang = langList[langIndex].code;
-
-const langDisplay = document.getElementById("lang");
-const result = document.getElementById("result");
-const weatherBox = document.getElementById("weather");
-
-// 🌐 言語トグル
-document.getElementById("langBtn").onclick = () => {
-  langIndex = (langIndex + 1) % langList.length;
-  recognition.lang = langList[langIndex].code;
-  langDisplay.textContent = `言語: ${langList[langIndex].label} (${langList[langIndex].code})`;
+const CACHE_DURATION = 6 * 60 * 60 * 1000;
+const CACHE_KEYS = {
+  gps: "amberWeatherCacheGPS",
+  manual: "amberWeatherCacheManual"
 };
 
-// 🎙️ 音声認識
-recognition.onresult = (e) => {
-  const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-  result.value = transcript;
-};
+let watchId = null;
+let finalizeTimer = null;
 
-// 🎤マイク許可確認
-async function requestMicPermission() {
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function setWeatherHTML(html) {
+  document.getElementById("weather").innerHTML = html;
+}
+
+function renderMessage(message, extra = "", isError = false) {
+  setWeatherHTML(`
+    <div class="weather-inner">
+      <p style="font-size:1rem; color:${isError ? "var(--danger)" : "#e0e0e0"};">${escapeHtml(message)}</p>
+      ${extra ? `<div class="status ${isError ? "error" : ""}">${extra}</div>` : ""}
+    </div>
+  `);
+}
+
+function getCache(key) {
   try {
-    await navigator.mediaDevices.getUserMedia({ audio: true });
-    console.log("🎤 マイク許可OK");
-  } catch (err) {
-    alert("マイクの使用を許可してください: " + err.message);
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !data.time || !data.html) return null;
+    if (Date.now() - data.time > CACHE_DURATION) return null;
+    return data;
+  } catch {
+    return null;
   }
 }
 
-document.getElementById("startBtn").onclick = async () => {
-  await requestMicPermission();
-  recognition.start();
-};
-document.getElementById("stopBtn").onclick = () => recognition.stop();
+function setCache(key, payload) {
+  localStorage.setItem(key, JSON.stringify({
+    ...payload,
+    time: Date.now()
+  }));
+}
 
-// 📍GPS＋住所＋天気（絵文字＋日本語表示対応）
-document.getElementById("gpsBtn").onclick = () => {
+function clearGeoWatch() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  if (finalizeTimer) {
+    clearTimeout(finalizeTimer);
+    finalizeTimer = null;
+  }
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data?.error || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+async function getWeather(lat, lon) {
+  return await fetchJson(`/api/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+}
+
+function pickAddressFromComponents(result) {
+  const comps = result?.address_components || [];
+  const findLong = (type) => comps.find(c => c.types?.includes(type))?.long_name || "";
+
+  const ward = findLong("sublocality_level_1") || findLong("locality");
+  const city = findLong("locality") || findLong("administrative_area_level_2");
+  const prefecture = findLong("administrative_area_level_1");
+
+  return ward || city || prefecture || "";
+}
+
+async function getAddress(lat, lon) {
+  const data = await fetchJson(`/api/geocode?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`);
+
+  if (!data.results?.[0]) {
+    return "現在地";
+  }
+
+  const first = data.results[0];
+  const byComponents = pickAddressFromComponents(first);
+  if (byComponents) return byComponents;
+
+  const addr = String(first.formatted_address || "")
+    .replace(/^日本[,、]?\s*/, "")
+    .replace(/〒\d{3}-\d{4}\s*/, "")
+    .trim();
+
+  return addr || "現在地";
+}
+
+function buildWeatherHTML({ place, weather, acc = 0, note = "" }) {
+  const desc = weather?.weather?.[0]?.description ?? "不明";
+  const icon = weather?.weather?.[0]?.icon ?? "01d";
+  const temp = typeof weather?.main?.temp === "number" ? weather.main.temp.toFixed(1) : "-";
+  const hum = weather?.main?.humidity ?? "-";
+  const press = weather?.main?.pressure ?? "-";
+
+  return `
+    <div class="weather-inner">
+      <div class="place-name">📍 ${escapeHtml(place)}</div>
+      <img
+        src="https://openweathermap.org/img/wn/${escapeHtml(icon)}@2x.png"
+        alt="${escapeHtml(desc)}"
+        width="80"
+        style="filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));"
+      >
+      <div class="desc">${escapeHtml(desc)}</div>
+      <div class="temp">🌡️ ${escapeHtml(temp)}℃</div>
+      <div class="meta">
+        💧 ${escapeHtml(hum)}%　⏱️ ${escapeHtml(press)} hPa
+      </div>
+      ${acc ? `<div class="mini">GPS精度 ±${escapeHtml(acc)}m</div>` : ""}
+      ${note ? `<div class="mini">${note}</div>` : ""}
+    </div>
+  `;
+}
+
+async function renderWeatherByCoords(lat, lon, options = {}) {
+  const {
+    label = "",
+    acc = 0,
+    force = false,
+    cacheKey = CACHE_KEYS.gps,
+    note = ""
+  } = options;
+
+  if (!force) {
+    const cached = getCache(cacheKey);
+    if (cached) {
+      setWeatherHTML(cached.html);
+      return;
+    }
+  }
+
+  const place = label || await getAddress(lat, lon);
+  const weather = await getWeather(lat, lon);
+
+  const html = buildWeatherHTML({
+    place,
+    weather,
+    acc,
+    note
+  });
+
+  setWeatherHTML(html);
+  setCache(cacheKey, {
+    lat,
+    lon,
+    html
+  });
+}
+
+async function initLocation(force = false) {
+  const cached = getCache(CACHE_KEYS.gps);
+  if (cached && !force) {
+    setWeatherHTML(cached.html.replace(
+      '</div>',
+      `<div class="mini">(CACHED GPS DATA)</div></div>`
+    ));
+  } else {
+    renderMessage("📡 測位中…", "現在地の精度が良い座標を取得しています。");
+  }
+
   if (!navigator.geolocation) {
-    alert("位置情報が利用できません");
+    renderMessage("GPS非対応です", "この端末またはブラウザでは位置情報が使えません。", true);
     return;
   }
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const lat = pos.coords.latitude;
-    const lon = pos.coords.longitude;
+  clearGeoWatch();
 
-    // 🏠 住所取得（OpenStreetMap）
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-    const data = await res.json();
-    const addr = data.address;
-    const prefecture = addr.state || "";
-    const city = addr.city || addr.town || addr.village || "";
-    const ward = addr.suburb || addr.county || "";
+  let bestPos = null;
+  let finished = false;
 
-    // ☀️ 天気取得（Open-Meteo / JMAモデル）
-    const api = `https://api.open-meteo.com/v1/jma?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`;
-    const weatherRes = await fetch(api);
-    const weatherData = await weatherRes.json();
-    const current = weatherData.current;
+  const finalize = async () => {
+    if (finished) return;
+    finished = true;
+    clearGeoWatch();
 
-    // 🌦️ 天気コード → 絵文字＋日本語マップ
-    const weatherMap = {
-      0:  { icon: "☀️", text: "快晴" },
-      1:  { icon: "🌤️", text: "晴れ" },
-      2:  { icon: "⛅", text: "晴れ時々くもり" },
-      3:  { icon: "☁️", text: "くもり" },
-      45: { icon: "🌫️", text: "霧" },
-      48: { icon: "🌫️", text: "濃霧" },
-      51: { icon: "🌦️", text: "小雨" },
-      53: { icon: "🌦️", text: "にわか雨" },
-      61: { icon: "🌧️", text: "雨" },
-      63: { icon: "🌧️", text: "やや強い雨" },
-      65: { icon: "🌧️", text: "強い雨" },
-      71: { icon: "❄️", text: "雪" },
-      73: { icon: "❄️", text: "やや強い雪" },
-      75: { icon: "❄️", text: "強い雪" },
-      80: { icon: "🌧️", text: "にわか雨" },
-      95: { icon: "⛈️", text: "雷雨" },
-      99: { icon: "⛈️", text: "激しい雷雨" }
-    };
-    const code = current.weather_code;
-    const weatherInfo = weatherMap[code] || { icon: "❔", text: "不明" };
+    if (!bestPos) {
+      renderMessage("現在地を取得できませんでした", "位置情報の許可設定をご確認ください。", true);
+      return;
+    }
 
-    // 🌈 表示
-    document.getElementById("weather").innerHTML = `
-      <h3>📍 現在地：${prefecture} ${city} ${ward}</h3>
-      <p>${weatherInfo.icon} <b>${weatherInfo.text}</b></p>
-      <p>気温：${current.temperature_2m} ℃<br>
-      湿度：${current.relative_humidity_2m} %</p>
-      <small>データ：OpenStreetMap＋Open-Meteo（JMAモデル）</small>
-    `;
-  }, (err) => {
-    alert("GPSエラー: " + err.message);
+    try {
+      await renderWeatherByCoords(
+        bestPos.coords.latitude,
+        bestPos.coords.longitude,
+        {
+          acc: Math.round(bestPos.coords.accuracy),
+          force,
+          cacheKey: CACHE_KEYS.gps,
+          note: force ? "GPS更新済み" : ""
+        }
+      );
+    } catch (err) {
+      renderMessage("天気取得に失敗しました", escapeHtml(err.message), true);
+    }
+  };
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      if (!bestPos || pos.coords.accuracy < bestPos.coords.accuracy) {
+        bestPos = pos;
+      }
+      if (bestPos && bestPos.coords.accuracy <= 150) {
+        finalize();
+      }
+    },
+    (err) => {
+      console.warn("GPS失敗:", err);
+      renderMessage("位置情報の取得に失敗しました", escapeHtml(err.message || "GPSエラー"), true);
+      clearGeoWatch();
+    },
+    {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 30000
+    }
+  );
+
+  finalizeTimer = setTimeout(finalize, 5000);
+}
+
+async function searchPlace() {
+  const input = document.getElementById("place");
+  const place = input.value.trim();
+
+  if (!place) {
+    alert("地名を入力してください。");
+    return;
+  }
+
+  renderMessage("検索中…", `「${escapeHtml(place)}」の天気を取得しています。`);
+
+  try {
+    const data = await fetchJson(`/api/geocode?place=${encodeURIComponent(place)}`);
+    if (!data.results?.[0]?.geometry?.location) {
+      throw new Error("地名が見つかりません");
+    }
+
+    const loc = data.results[0].geometry.location;
+    await renderWeatherByCoords(loc.lat, loc.lng, {
+      label: place,
+      acc: 0,
+      force: true,
+      cacheKey: CACHE_KEYS.manual,
+      note: "手動検索結果"
+    });
+  } catch (err) {
+    renderMessage("検索に失敗しました", escapeHtml(err.message), true);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("refresh").addEventListener("click", () => initLocation(true));
+  document.getElementById("search").addEventListener("click", searchPlace);
+  document.getElementById("place").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") searchPlace();
   });
-};
-</script>
 
+  initLocation(false);
+});
+</script>
 </body>
 </html>
